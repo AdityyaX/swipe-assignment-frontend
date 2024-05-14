@@ -5,6 +5,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Card from "react-bootstrap/Card";
+import { convertCurrency } from '../utils/currencyConversion';
 import InvoiceItem from "./InvoiceItem";
 import InvoiceModal from "./InvoiceModal";
 import { BiArrowBack } from "react-icons/bi";
@@ -70,6 +71,16 @@ const InvoiceForm = () => {
     handleCalculateTotal();
   }, []);
 
+  const currencyMapping = {
+    '$': 'USD', 
+    '£': 'GBP', 
+    '¥': 'JPY', 
+    '¤': 'CAD',
+    'A$': 'AUD', 
+    'S$': 'SGD', 
+    '元': 'CNY', 
+    '₿': 'BTC', 
+  };
   const handleRowDel = (itemToDelete) => {
     const updatedItems = formData.items.filter(
       (item) => item.itemId !== itemToDelete.itemId
@@ -77,6 +88,34 @@ const InvoiceForm = () => {
     setFormData({ ...formData, items: updatedItems });
     handleCalculateTotal();
   };
+
+  const onCurrencyChange = async (selectedOption) => {
+    const currencySymbol = selectedOption.currency;
+    const currencyCode = currencyMapping[currencySymbol] || selectedOption.currency;
+    setFormData({ ...formData, currency: currencySymbol });
+  
+    // Convert item prices and totals to the new currency
+    const newItems = await Promise.all(
+      formData.items.map(async (item) => {
+        const convertedPrice = await convertCurrency(parseFloat(item.itemPrice), currencyCode);       return { ...item, itemPrice: convertedPrice.toString() };
+      })
+    );
+  
+    const newSubTotal = await convertCurrency(parseFloat(formData.subTotal), currencyCode);
+    const newTaxAmount = await convertCurrency(parseFloat(formData.taxAmount), currencyCode);
+    const newDiscountAmount = await convertCurrency(parseFloat(formData.discountAmount), currencyCode);
+    const newTotal = await convertCurrency(parseFloat(formData.total), currencyCode);
+  
+    setFormData({
+      ...formData,
+      items: newItems,
+      subTotal: newSubTotal.toString(),
+      taxAmount: newTaxAmount.toString(),
+      discountAmount: newDiscountAmount.toString(),
+      total: newTotal.toString(),
+    });
+  };
+
 
   const handleAddEvent = () => {
     const id = (+new Date() + Math.floor(Math.random() * 999999)).toString(36);
@@ -97,27 +136,18 @@ const InvoiceForm = () => {
   const handleCalculateTotal = () => {
     setFormData((prevFormData) => {
       let subTotal = 0;
-
+  
       prevFormData.items.forEach((item) => {
-        subTotal +=
-          parseFloat(item.itemPrice).toFixed(2) * parseInt(item.itemQuantity);
+        subTotal += parseFloat(item.itemPrice) * parseInt(item.itemQuantity);
       });
-
-      const taxAmount = parseFloat(
-        subTotal * (prevFormData.taxRate / 100)
-      ).toFixed(2);
-      const discountAmount = parseFloat(
-        subTotal * (prevFormData.discountRate / 100)
-      ).toFixed(2);
-      const total = (
-        subTotal -
-        parseFloat(discountAmount) +
-        parseFloat(taxAmount)
-      ).toFixed(2);
-
+  
+      const taxAmount = parseFloat(subTotal * (prevFormData.taxRate / 100)).toFixed(2);
+      const discountAmount = parseFloat(subTotal * (prevFormData.discountRate / 100)).toFixed(2);
+      const total = (subTotal - parseFloat(discountAmount) + parseFloat(taxAmount)).toFixed(2);
+  
       return {
         ...prevFormData,
-        subTotal: parseFloat(subTotal).toFixed(2),
+        subTotal: subTotal.toFixed(2),
         taxAmount,
         discountAmount,
         total,
@@ -142,9 +172,9 @@ const InvoiceForm = () => {
     handleCalculateTotal();
   };
 
-  const onCurrencyChange = (selectedOption) => {
-    setFormData({ ...formData, currency: selectedOption.currency });
-  };
+  // const onCurrencyChange = (selectedOption) => {
+  //   setFormData({ ...formData, currency: selectedOption.currency });
+  // };
 
   const openModal = (event) => {
     event.preventDefault();
@@ -308,6 +338,7 @@ const InvoiceForm = () => {
               currency={formData.currency}
               items={formData.items}
             />
+            {/* <ProductsTab/> */}
             <Row className="mt-4 justify-content-end">
               <Col lg={6}>
                 <div className="d-flex flex-row align-items-start justify-content-between">
@@ -480,6 +511,7 @@ const InvoiceForm = () => {
           </div>
         </Col>
       </Row>
+
     </Form>
   );
 };
