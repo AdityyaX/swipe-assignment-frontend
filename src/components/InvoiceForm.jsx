@@ -71,6 +71,16 @@ const InvoiceForm = () => {
     handleCalculateTotal();
   }, []);
 
+  const currencyMapping = {
+    '$': 'USD', 
+    '£': 'GBP', 
+    '¥': 'JPY', 
+    '¤': 'CAD',
+    'A$': 'AUD', 
+    'S$': 'SGD', 
+    '元': 'CNY', 
+    '₿': 'BTC', 
+  };
   const handleRowDel = (itemToDelete) => {
     const updatedItems = formData.items.filter(
       (item) => item.itemId !== itemToDelete.itemId
@@ -80,24 +90,21 @@ const InvoiceForm = () => {
   };
 
   const onCurrencyChange = async (selectedOption) => {
-    const newCurrency = selectedOption.currency;
-    setFormData({ ...formData, currency: newCurrency });
+    const currencySymbol = selectedOption.currency;
+    const currencyCode = currencyMapping[currencySymbol] || selectedOption.currency;
+    setFormData({ ...formData, currency: currencySymbol });
   
     // Convert item prices and totals to the new currency
     const newItems = await Promise.all(
       formData.items.map(async (item) => {
-        const convertedPrice = await convertCurrency(
-          parseFloat(item.itemPrice),
-          newCurrency
-        );
-        return { ...item, itemPrice: convertedPrice.toString() };
+        const convertedPrice = await convertCurrency(parseFloat(item.itemPrice), currencyCode);       return { ...item, itemPrice: convertedPrice.toString() };
       })
     );
   
-    const newSubTotal = await convertCurrency(parseFloat(formData.subTotal), newCurrency);
-    const newTaxAmount = await convertCurrency(parseFloat(formData.taxAmount), newCurrency);
-    const newDiscountAmount = await convertCurrency(parseFloat(formData.discountAmount), newCurrency);
-    const newTotal = await convertCurrency(parseFloat(formData.total), newCurrency);
+    const newSubTotal = await convertCurrency(parseFloat(formData.subTotal), currencyCode);
+    const newTaxAmount = await convertCurrency(parseFloat(formData.taxAmount), currencyCode);
+    const newDiscountAmount = await convertCurrency(parseFloat(formData.discountAmount), currencyCode);
+    const newTotal = await convertCurrency(parseFloat(formData.total), currencyCode);
   
     setFormData({
       ...formData,
@@ -165,6 +172,9 @@ const InvoiceForm = () => {
     handleCalculateTotal();
   };
 
+  // const onCurrencyChange = (selectedOption) => {
+  //   setFormData({ ...formData, currency: selectedOption.currency });
+  // };
 
   const openModal = (event) => {
     event.preventDefault();
