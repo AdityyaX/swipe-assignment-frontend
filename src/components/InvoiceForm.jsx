@@ -9,19 +9,29 @@ import InvoiceItem from "./InvoiceItem";
 import InvoiceModal from "./InvoiceModal";
 import { BiArrowBack } from "react-icons/bi";
 import InputGroup from "react-bootstrap/InputGroup";
-import { useDispatch } from "react-redux";
+import { useDispatch ,useSelector} from "react-redux";
 import { addInvoice, updateInvoice } from "../redux/invoicesSlice";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import generateRandomId from "../utils/generateRandomId";
 import { useInvoiceListData } from "../redux/hooks";
+import ProductsTab from "./ItemTable";
+import { addItem } from "../redux/invoicesSlice";
+import store from '../store';
+import ItemTable from "./ItemTable";
 
 const InvoiceForm = () => {
   const dispatch = useDispatch();
+  const foermData = useSelector((state) => state.invoices);
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const isCopy = location.pathname.includes("create");
   const isEdit = location.pathname.includes("edit");
+
+
+  const addItemSelector = (newItem) => {
+    dispatch(addItem(newItem));
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const [copyId, setCopyId] = useState("");
@@ -86,14 +96,22 @@ const InvoiceForm = () => {
       itemDescription: "",
       itemPrice: "1.00",
       itemQuantity: 1,
+    }; const updatedFormData = {
+      items: [...formData.items, newItem],
     };
+
+
     setFormData({
       ...formData,
       items: [...formData.items, newItem],
     });
+  //  const [lastItem] = updatedFormData.slice(-1);
+
+    console.log("updatedFormData",updatedFormData);
+    addItemSelector(updatedFormData);
     handleCalculateTotal();
   };
-
+console.log(foermData);
   const handleCalculateTotal = () => {
     setFormData((prevFormData) => {
       let subTotal = 0;
@@ -133,7 +151,7 @@ const InvoiceForm = () => {
       return oldItem;
     });
 
-    setFormData({ ...formData, items: updatedItems });
+    setFormData({ items: updatedItems });
     handleCalculateTotal();
   };
 
@@ -182,9 +200,9 @@ const InvoiceForm = () => {
       alert("Invoice does not exists!!!!!");
     }
   };
-
   return (
     <Form onSubmit={openModal}>
+
       <div className="d-flex align-items-center">
         <BiArrowBack size={18} />
         <div className="fw-bold mt-1 mx-2 cursor-pointer">
@@ -193,7 +211,8 @@ const InvoiceForm = () => {
           </Link>
         </div>
       </div>
-
+      {JSON.stringify(foermData[foermData.length - 1])}
+      {/* <ProductsTab /> */}
       <Row>
         <Col md={8} lg={9}>
           <Card className="p-4 p-xl-5 my-3 my-xl-4">
@@ -480,7 +499,32 @@ const InvoiceForm = () => {
           </div>
         </Col>
       </Row>
+      <div>
+      {/* <ul>
+      {Array.isArray(foermData[foermData.length - 1]) && foermData[foermData.length - 1].length > 0 ? (
+  foermData[foermData.length - 1].map((item) => (
+    <li key={item.itemId}>
+      <h1>{item.itemName}</h1>
+    </li>
+  ))
+) : (
+  <li>No items found</li>
+)}
+
+</ul> */}
+ <ul>
+    {Array.isArray(foermData[foermData.length - 1]) && foermData[foermData.length - 1].length > 0 ? (
+      <ItemTable items={foermData[foermData.length - 1]} />
+    ) : (
+      <li>No items found</li>
+    )}
+  </ul>
+
+      </div>
+
+      
     </Form>
+
   );
 };
 
