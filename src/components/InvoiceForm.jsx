@@ -14,9 +14,8 @@ import { addInvoice, updateInvoice } from "../redux/invoicesSlice";
 import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import generateRandomId from "../utils/generateRandomId";
 import { useInvoiceListData } from "../redux/hooks";
-import ProductsTab from "./ItemTable";
-import { addItem } from "../redux/invoicesSlice";
-import store from '../store';
+import { addItem,removeItem } from "../redux/invoicesSlice";
+
 import ItemTable from "./ItemTable";
 
 const InvoiceForm = () => {
@@ -81,13 +80,15 @@ const InvoiceForm = () => {
   }, []);
 
   const handleRowDel = (itemToDelete) => {
-    const updatedItems = formData.items.filter(
-      (item) => item.itemId !== itemToDelete.itemId
-    );
-    setFormData({ ...formData, items: updatedItems });
-    handleCalculateTotal();
+    if (formData.items) {
+      const updatedItems = formData.items.filter(
+        (item) => item.itemId !== itemToDelete.itemId
+      );
+      setFormData({ ...formData, items: updatedItems });
+      dispatch(removeItem({ invoiceId: formData.id, itemId: itemToDelete.itemId }));
+      handleCalculateTotal();
+    }
   };
-
   const handleAddEvent = () => {
     const id = (+new Date() + Math.floor(Math.random() * 999999)).toString(36);
     const newItem = {

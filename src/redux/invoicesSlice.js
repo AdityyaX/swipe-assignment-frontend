@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-
+const initialState = [];
 const invoicesSlice = createSlice({
   name: "invoices",
   initialState: [],
@@ -22,6 +22,20 @@ const invoicesSlice = createSlice({
       state.push(action.payload.items);
       console.log("action", action.payload.items);
     },
+    removeItem: (state , action) => {
+      state.pop(action.payload)
+   
+  },
+  updateItem: (state, action) => {
+    const { itemId, field, value } = action.payload;
+    return state.map((item) =>
+      item.itemId === itemId
+        ? field === 'delete'
+          ? null
+          : { ...item, [field]: value }
+        : item
+    ).filter(Boolean);
+  },
   },
 });
 
@@ -29,7 +43,9 @@ export const {
   addInvoice,
   deleteInvoice,
   updateInvoice,
-  addItem
+  addItem,
+  removeItem,
+  updateItem
 } = invoicesSlice.actions;
 
 export const selectInvoiceList = (state) => state.invoices;

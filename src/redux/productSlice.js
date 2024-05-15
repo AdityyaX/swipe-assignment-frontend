@@ -9,6 +9,9 @@ const productsSlice = createSlice({
       console.log("action",action.payload);
 
     },
+    removeProduct:(state,action)=>{
+
+    }
 
     
   },
